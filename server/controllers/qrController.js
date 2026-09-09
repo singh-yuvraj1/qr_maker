@@ -1,6 +1,7 @@
 const QRCode = require('qrcode');
 const QR = require('../models/QR');
 const { validateUrl } = require('../utils/validateUrl');
+const { checkUrlReachability } = require('../utils/urlChecker');
 
 /**
  * Generates a QR code as a base64 data URL.
@@ -40,22 +41,49 @@ const generateQR = async (req, res) => {
       errorCorrectionLevel = 'H',
     } = req.body;
 
-    // Validate URL
+    // ── Step 1: Syntax validation ──────────────────────────────────────────────
     const validation = validateUrl(url);
     if (!validation.valid) {
-      return res.status(400).json({ error: validation.error });
+      return res.status(400).json({
+        success: false,
+        message: validation.error,
+        error: validation.error,
+      });
     }
 
     const normalizedUrl = validation.url;
 
-    // Validate error correction level
+    // ── Step 2: Reachability check (SSRF-safe) ─────────────────────────────────
+    // This MUST happen before QR generation. No QR is created if the destination
+    // is unreachable, nonexistent, or a blocked private/internal address.
+    const reach = await checkUrlReachability(normalizedUrl);
+    if (!reach.reachable) {
+      // Map the error message to an appropriate HTTP status code
+      const msg = reach.message || "We couldn't reach this link. Please make sure the website is available.";
+      let statusCode = 422; // Unprocessable — URL exists but destination doesn't
+
+      if (msg.includes('security')) {
+        statusCode = 403; // Forbidden — blocked private/internal destination
+      } else if (msg.includes('too long')) {
+        statusCode = 408; // Request Timeout
+      } else if (msg.includes("couldn't find")) {
+        statusCode = 422; // DNS failure / domain not found
+      }
+
+      console.log(`[QR] Reachability check failed for "${normalizedUrl}": ${msg}`);
+      return res.status(statusCode).json({
+        success: false,
+        message: msg,
+        error: msg,
+      });
+    }
+
+    // ── Step 3: Validate and normalize options ─────────────────────────────────
     const validECL = ['L', 'M', 'Q', 'H'];
     const ecl = validECL.includes(errorCorrectionLevel) ? errorCorrectionLevel : 'H';
-
-    // Validate size
     const qrSize = Math.min(Math.max(parseInt(size) || 300, 100), 1000);
 
-    // Generate QR data URL
+    // ── Step 4: Generate QR data URL ──────────────────────────────────────────
     const qrData = await generateQRDataUrl(normalizedUrl, {
       foregroundColor,
       backgroundColor,
@@ -63,7 +91,7 @@ const generateQR = async (req, res) => {
       errorCorrectionLevel: ecl,
     });
 
-    // Save to DB if authenticated
+    // ── Step 5: Save to DB (only if authenticated and reachability passed) ─────
     let savedQR = null;
     if (req.userId) {
       savedQR = await QR.create({
@@ -80,13 +108,18 @@ const generateQR = async (req, res) => {
 
     return res.status(200).json({
       success: true,
+      message: 'QR code generated successfully.',
       qrData,
       url: normalizedUrl,
       ...(savedQR && { id: savedQR._id }),
     });
   } catch (err) {
     console.error('Generate QR error:', err);
-    return res.status(500).json({ error: 'Failed to generate QR code. Please try again.' });
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to generate QR code. Please try again.',
+      error: 'Failed to generate QR code. Please try again.',
+    });
   }
 };
 

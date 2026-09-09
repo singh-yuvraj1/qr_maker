@@ -1,6 +1,14 @@
 @import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
+/*
+ * CRITICAL: Tailwind v4 defaults dark: variant to prefers-color-scheme media query.
+ * This app uses the .dark CLASS on <html> (toggled by App.jsx).
+ * This @custom-variant makes ALL dark: utilities respond to the .dark class,
+ * which fixes the theme toggle and ensures correct contrast on both themes.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ═══════════════════════════════════════════════════════════
    BASE
 ═══════════════════════════════════════════════════════════ */
@@ -16,7 +24,7 @@
   body {
     @apply transition-colors duration-300 antialiased;
     font-family: 'Outfit', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-    /* Light theme body defaults — strong readable text */
+    /* Light theme body defaults — strong readable dark text */
     color: #1e293b;
     background-color: #f8fafc;
   }
@@ -56,10 +64,11 @@
 
 /* Navbar / surface glass */
 .glass {
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 .dark .glass {
@@ -67,18 +76,19 @@
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: none;
 }
 
 /* Main content card — strong contrast on both themes */
 .glass-card {
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.97);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(148, 163, 184, 0.25);
+  border: 1px solid rgba(148, 163, 184, 0.3);
   box-shadow:
-    0 4px 6px -1px rgba(0, 0, 0, 0.05),
-    0 16px 48px -8px rgba(99, 102, 241, 0.08),
-    0 0 0 1px rgba(255, 255, 255, 0.6) inset;
+    0 4px 6px -1px rgba(0, 0, 0, 0.06),
+    0 16px 48px -8px rgba(99, 102, 241, 0.10),
+    0 1px 0 rgba(255, 255, 255, 0.8) inset;
 }
 
 .dark .glass-card {
@@ -94,8 +104,8 @@
 
 /* Inner panel (customize section, etc.) */
 .glass-inner {
-  background: rgba(248, 250, 252, 0.8);
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(248, 250, 252, 0.95);
+  border: 1px solid rgba(148, 163, 184, 0.25);
   border-radius: 16px;
 }
 
@@ -108,14 +118,14 @@
    INPUTS — LIGHT THEME VISIBILITY FIX
 ═══════════════════════════════════════════════════════════ */
 .input-base {
-  background: rgba(255, 255, 255, 0.9);
-  border: 1.5px solid rgba(148, 163, 184, 0.45);
-  color: #1e293b;
+  background: #ffffff;
+  border: 1.5px solid rgba(100, 116, 139, 0.4);
+  color: #0f172a;
   transition: all 0.2s ease;
 }
 
 .input-base::placeholder {
-  color: #94a3b8;
+  color: #64748b;
 }
 
 .input-base:focus {
@@ -132,7 +142,7 @@
 }
 
 .dark .input-base::placeholder {
-  color: #475569;
+  color: #64748b;
 }
 
 .dark .input-base:focus {

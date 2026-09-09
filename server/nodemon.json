@@ -1,0 +1,15 @@
+{
+  "watch": ["*.js", "config/", "controllers/", "middleware/", "models/", "routes/", "utils/"],
+  "ext": "js,json",
+  "ignore": [
+    ".venv/",
+    "node_modules/",
+    "*.py",
+    "*.pyc",
+    "__pycache__/",
+    "requirements.txt",
+    "scripts/",
+    "tests/"
+  ],
+  "delay": 1000
+}

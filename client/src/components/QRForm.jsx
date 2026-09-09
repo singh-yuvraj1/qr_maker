@@ -20,7 +20,7 @@ const SIZE_OPTIONS = [
 // ─── Button label by state ────────────────────────────────────────────────────
 const BTN_LABELS = {
   idle:    { icon: <Sparkles className="w-4.5 h-4.5" />, text: 'Generate QR Code' },
-  loading: { icon: <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />, text: 'Generating...' },
+  loading: { icon: <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />, text: 'Verifying link...' },
   success: { icon: null, text: '✓ QR Generated' },
   error:   { icon: null, text: '↺ Try Again' },
 };

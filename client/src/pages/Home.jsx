@@ -74,11 +74,13 @@ export default function Home() {
   const handleGenerate = async (params) => {
     setErrorMsg('');
     setSuccessMsg('');
-    setQrData('');
+    // Do NOT clear existing qrData here — only clear it on success.
+    // This prevents wiping a previously valid QR when a new attempt fails.
     setBtnState('loading');
 
     try {
       const result = await generateQR(params);
+      // Only set QR data on confirmed success
       setQrData(result.qrData);
       setTargetUrl(result.url);
       setQrName(params.name || '');
@@ -91,7 +93,11 @@ export default function Home() {
       // Reset button after 2.5s
       setTimeout(() => setBtnState('idle'), 2500);
     } catch (err) {
-      const msg = err.response?.data?.error || 'Failed to generate QR Code. Please try again.';
+      // Read message from either field for backward compatibility
+      const msg =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        'Failed to generate QR Code. Please try again.';
       setErrorMsg(msg);
       setBtnState('error');
       setTimeout(() => setBtnState('idle'), 2500);
