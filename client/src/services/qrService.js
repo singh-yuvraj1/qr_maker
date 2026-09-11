@@ -12,26 +12,4 @@ export const qrService = {
     });
     return response.data;
   },
-
-  getAll: async ({ search = '', sort = 'newest', page = 1, limit = 20 } = {}) => {
-    const response = await api.get('/qr', {
-      params: { search, sort, page, limit },
-    });
-    return response.data;
-  },
-
-  getById: async (id) => {
-    const response = await api.get(`/qr/${id}`);
-    return response.data;
-  },
-
-  deleteQR: async (id) => {
-    const response = await api.delete(`/qr/${id}`);
-    return response.data;
-  },
-
-  getStats: async () => {
-    const response = await api.get('/qr/stats');
-    return response.data;
-  },
 };

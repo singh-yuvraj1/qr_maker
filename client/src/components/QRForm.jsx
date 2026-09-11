@@ -20,7 +20,7 @@ const SIZE_OPTIONS = [
 // ─── Button label by state ────────────────────────────────────────────────────
 const BTN_LABELS = {
   idle:    { icon: <Sparkles className="w-4.5 h-4.5" />, text: 'Generate QR Code' },
-  loading: { icon: <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />, text: 'Verifying link...' },
+  loading: { icon: <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />, text: 'Checking URL...' },
   success: { icon: null, text: '✓ QR Generated' },
   error:   { icon: null, text: '↺ Try Again' },
 };
@@ -37,15 +37,26 @@ export default function QRForm({ onGenerate, onClear, isLoading, btnState = 'idl
   const [size, setSize] = useState(300);
   const [ecl, setEcl] = useState('H'); // Error Correction Level: L | M | Q | H
 
-  // ─── URL Validation ────────────────────────────────────────────────────────
+  // ─── URL Format Validation (Stage 1 — frontend) ────────────────────────────
+  // Only validates format here. Real reachability is checked by the backend.
   const validateUrl = (value) => {
     const trimmed = value.trim();
-    if (!trimmed) return 'URL cannot be empty.';
-    // Allow bare domains like "google.com" — backend normalises to https://
+    if (!trimmed) return 'Please enter a URL.';
+
+    // Must start with http:// or https://
+    if (!/^https?:\/\//i.test(trimmed)) {
+      return 'Please enter a valid HTTP or HTTPS URL (e.g. https://google.com).';
+    }
+
     try {
-      const testUrl = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
-      const parsed = new URL(testUrl);
-      if (!parsed.hostname.includes('.')) return 'Please enter a valid domain (e.g. google.com).';
+      const parsed = new URL(trimmed);
+      if (!['http:', 'https:'].includes(parsed.protocol)) {
+        return 'Only http:// and https:// URLs are supported.';
+      }
+      // Must have a hostname with at least one dot (real domain)
+      if (!parsed.hostname || !parsed.hostname.includes('.')) {
+        return 'Please enter a valid URL with a proper domain (e.g. https://google.com).';
+      }
     } catch {
       return 'Please enter a valid URL (e.g. https://google.com).';
     }

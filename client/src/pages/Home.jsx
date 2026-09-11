@@ -1,11 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { QrCode, Sparkles, CheckCircle2, AlertCircle, LogIn, ArrowRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Sparkles, CheckCircle2, AlertCircle } from 'lucide-react';
 import QRForm from '../components/QRForm';
 import QRDisplay from '../components/QRDisplay';
 import { useQR } from '../hooks/useQR';
-import { useAuth } from '../context/AuthContext';
 
 // ─── Floating orbs background ────────────────────────────────────────────────
 function BackgroundOrbs() {
@@ -62,7 +60,6 @@ function use3DTilt(strength = 8) {
 
 export default function Home() {
   const { generateQR, isGenerating } = useQR();
-  const { isAuthenticated } = useAuth();
   const [qrData, setQrData] = useState('');
   const [targetUrl, setTargetUrl] = useState('');
   const [qrName, setQrName] = useState('');
@@ -74,8 +71,11 @@ export default function Home() {
   const handleGenerate = async (params) => {
     setErrorMsg('');
     setSuccessMsg('');
-    // Do NOT clear existing qrData here — only clear it on success.
-    // This prevents wiping a previously valid QR when a new attempt fails.
+    // IMPORTANT: Clear any existing QR immediately so an old QR is never
+    // left visible/downloadable while a new request is in flight.
+    setQrData('');
+    setTargetUrl('');
+    setQrName('');
     setBtnState('loading');
 
     try {
@@ -84,21 +84,20 @@ export default function Home() {
       setQrData(result.qrData);
       setTargetUrl(result.url);
       setQrName(params.name || '');
-      setSuccessMsg(
-        isAuthenticated
-          ? 'QR Code generated and saved to your history!'
-          : 'QR Code generated! Sign in to save your history.'
-      );
+      setSuccessMsg('URL is valid and reachable. QR code generated!');
       setBtnState('success');
       // Reset button after 2.5s
       setTimeout(() => setBtnState('idle'), 2500);
     } catch (err) {
-      // Read message from either field for backward compatibility
       const msg =
         err.response?.data?.message ||
         err.response?.data?.error ||
-        'Failed to generate QR Code. Please try again.';
+        'URL is invalid or unreachable.';
       setErrorMsg(msg);
+      // Ensure QR is cleared on failure
+      setQrData('');
+      setTargetUrl('');
+      setQrName('');
       setBtnState('error');
       setTimeout(() => setBtnState('idle'), 2500);
     }
@@ -116,7 +115,7 @@ export default function Home() {
   // Auto-dismiss alerts
   useEffect(() => {
     if (!successMsg && !errorMsg) return;
-    const t = setTimeout(() => { setSuccessMsg(''); setErrorMsg(''); }, 5000);
+    const t = setTimeout(() => { setSuccessMsg(''); setErrorMsg(''); }, 6000);
     return () => clearTimeout(t);
   }, [successMsg, errorMsg]);
 
@@ -150,14 +149,6 @@ export default function Home() {
                   : <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-500" />
                 }
                 <span>{successMsg || errorMsg}</span>
-                {successMsg && !isAuthenticated && (
-                  <Link
-                    to="/login"
-                    className="ml-auto flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 font-bold hover:underline whitespace-nowrap"
-                  >
-                    <LogIn className="w-3.5 h-3.5" /> Sign in
-                  </Link>
-                )}
               </motion.div>
             )}
           </AnimatePresence>
@@ -175,7 +166,7 @@ export default function Home() {
           >
             <div className="inline-flex items-center gap-1.5 py-1 px-3 rounded-full bg-indigo-100 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 text-xs font-bold uppercase tracking-widest mb-3 border border-indigo-200/60 dark:border-indigo-500/20">
               <Sparkles className="w-3.5 h-3.5" />
-              Premium QR Generator
+              A Free QR Generator
             </div>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
               Turn any link into a{' '}
@@ -185,10 +176,7 @@ export default function Home() {
               .
             </h1>
             <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-              High-resolution, customizable QR codes — instant & free.
-              {!isAuthenticated && (
-                <> <Link to="/register" className="text-indigo-600 dark:text-indigo-400 font-semibold hover:underline inline-flex items-center gap-0.5">Sign up <ArrowRight className="w-3 h-3" /></Link> to save history.</>
-              )}
+              High-resolution, customizable QR codes — verified, instant &amp; free. No login required.
             </p>
           </motion.div>
 
@@ -231,11 +219,26 @@ export default function Home() {
             </div>
           </motion.div>
 
-          {/* Footer */}
-          <p className="mt-4 text-xs text-slate-400 dark:text-slate-600 font-medium text-center">
-            QRSpark v2.0 — MongoDB · Express · React · Node.js
-          </p>
         </div>
+
+        {/* ── Footer — pinned to the bottom of main ── */}
+        <footer className="w-full py-5 px-4 border-t border-slate-200/50 dark:border-white/5 mt-auto">
+          <div className="max-w-5xl mx-auto flex flex-col items-center gap-1 text-center">
+            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+              Made by{' '}
+              <span className="text-indigo-600 dark:text-indigo-400">Yuvraj Singh</span>
+            </p>
+            <a
+              href="mailto:yuvraj.singh.95928@gmail.com"
+              className="text-xs text-slate-400 dark:text-slate-500 hover:text-indigo-500 dark:hover:text-indigo-400 hover:underline transition-colors"
+            >
+              yuvraj.singh.95928@gmail.com
+            </a>
+            <p className="text-[11px] text-slate-300 dark:text-slate-600 mt-0.5">
+              &copy; {new Date().getFullYear()} QRSpark. All rights reserved.
+            </p>
+          </div>
+        </footer>
       </main>
     </>
   );

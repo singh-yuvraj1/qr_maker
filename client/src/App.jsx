@@ -1,16 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
-import ProtectedRoute from './components/ProtectedRoute';
-
-// Pages — lazy loaded would be ideal but direct import for simplicity
 import Home from './pages/Home';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Dashboard from './pages/Dashboard';
-import History from './pages/History';
-import Analytics from './pages/Analytics';
-import Profile from './pages/Profile';
 
 export default function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -39,18 +30,8 @@ export default function App() {
       <Navbar darkMode={darkMode} setDarkMode={setDarkMode} />
 
       <Routes>
-        {/* Public */}
         <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-
-        {/* Protected */}
-        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
-        <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
-        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-
-        {/* Fallback */}
+        {/* Redirect everything else to home */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>

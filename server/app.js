@@ -4,7 +4,6 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 
-const authRoutes = require('./routes/authRoutes');
 const qrRoutes = require('./routes/qrRoutes');
 
 const app = express();
@@ -20,9 +19,9 @@ app.use(
       'http://localhost:5173',
       'http://127.0.0.1:5173',
     ],
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: false,
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type'],
   })
 );
 
@@ -37,7 +36,7 @@ const limiter = rateLimit({
 
 const generateLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 30,
+  max: 20,
   message: { error: 'Too many QR generation requests. Please slow down.' },
 });
 
@@ -53,7 +52,6 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 // ─── Routes ────────────────────────────────────────────────────────────────
-app.use('/api/auth', authRoutes);
 app.use('/api/qr', generateLimiter, qrRoutes);
 
 // ─── Health Check ──────────────────────────────────────────────────────────
@@ -61,7 +59,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'healthy',
     service: 'QRSpark API',
-    version: '2.0.0',
+    version: '3.0.0',
     timestamp: new Date().toISOString(),
   });
 });
@@ -75,7 +73,7 @@ app.use((req, res) => {
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
   res.status(err.status || 500).json({
-    error: err.message || 'Internal server error.',
+    error: 'Internal server error.',
   });
 });
 

@@ -318,9 +318,50 @@ async function checkUrlReachability(url) {
         continue;
       }
 
-      // ── Any HTTP response (including 4xx) means the server exists ────────────
-      // We do NOT require 200; 401, 403, 404, 405, 429, etc. all mean the server replied.
-      return { reachable: true };
+      // ── Classify the HTTP response status ────────────────────────────────────
+      // 2xx — success
+      if (statusCode >= 200 && statusCode < 300) {
+        return { reachable: true };
+      }
+
+      // 404 — resource explicitly not found; treat as unreachable
+      if (statusCode === 404) {
+        return {
+          reachable: false,
+          message: 'URL is invalid or unreachable. The page was not found (404).',
+        };
+      }
+
+      // 3xx without Location header — redirect with missing target
+      if (statusCode >= 300 && statusCode < 400) {
+        return { reachable: true };
+      }
+
+      // 401 / 403 — requires auth but the server exists and responded
+      if (statusCode === 401 || statusCode === 403) {
+        return { reachable: true };
+      }
+
+      // 405 — HEAD not allowed (GET fallback already tried above); server exists
+      if (statusCode === 405) {
+        return { reachable: true };
+      }
+
+      // 429 — rate limited, server exists
+      if (statusCode === 429) {
+        return { reachable: true };
+      }
+
+      // 5xx — server error, server exists but is unhealthy — still reachable
+      if (statusCode >= 500) {
+        return { reachable: true };
+      }
+
+      // Any other 4xx (410, 451, etc.) — treat as not found / not valid
+      return {
+        reachable: false,
+        message: 'URL is invalid or unreachable.',
+      };
     }
   } finally {
     clearTimeout(timer);
